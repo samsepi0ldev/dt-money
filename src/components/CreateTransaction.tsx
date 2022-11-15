@@ -23,12 +23,14 @@ export function CreateTransaction(props: Props) {
     const formElm = e.target as HTMLFormElement
     const data = Object.fromEntries(new FormData(formElm)) as any
     data.transaction = selectedOption === 'entry' 
-      ? Number(data.transaction.replace(/[^0-9,-]/, '').replace(/[^0-9.-]/, '.')) * 100
-      : -Number(data.transaction.replace(/[^0-9,-]/, '').replace(/[^0-9.-]/, '.')) * 100
+    ? Number(data.transaction.replace(/[^0-9,-]/, '').replace(/[^0-9.-]/, '.')) * 100
+    : -Number(data.transaction.replace(/[^0-9,-]/, '').replace(/[^0-9.-]/, '.')) * 100
     data.createdAt = new Date().toISOString()
     cache.create(data)
     props.refetch.emit('fetch-transactions')
-    props.refetch.emit('update-screen')
+    alert('Transação cadastrada com sucesso!')
+    formElm.reset()
+    setSelectedOption('')
   }
   return (
     <Dialog.Portal>

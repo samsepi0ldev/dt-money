@@ -17,11 +17,7 @@ import { EventEmitter } from '../lib/EventEmitter'
 export function Main () {
   const scrollRef = React.useRef<HTMLDivElement>(null)
   const { transactions, setTransactions } = useTransaction()
-  const [amountEntry, setAmountEntry] = React.useState(0)
-  const [amountOut, setAmountOut] = React.useState(0)
-  const [totalAmount, setTotalAmount] = React.useState(0)
   const [page, setPage] = React.useState(1)
-  const [countPage, setCountPage] = React.useState(0)
 
   const cache = repo('expansive-transactions')
   const emitter = new EventEmitter()
@@ -29,22 +25,35 @@ export function Main () {
   function fetchTransactions () {
     setTransactions(cache.get(page))
   }
-  function updateScreenWithData () {
+
+  const summary = React.useMemo(() => {
     const transactions = cache.get() as TransactionProps[]
-    const entry = transactions
-    .filter(transaction => transaction.transaction > 0)
-    .reduce((acc, cur) => acc += cur.transaction, 0)
-    const out = transactions
-    .filter(transaction => transaction.transaction < 0)
-    .reduce((acc, cur) => acc += cur.transaction, 0)
-    setAmountEntry(entry/100)
-    setAmountOut(Math.abs(out/100))
-    setTotalAmount((entry + out)/100)
-    setCountPage(cache.countPages())
-  }
+    const data = transactions.reduce((acc, cur) => {
+      if (cur.transaction > 0) {
+        acc.income += cur.transaction
+      } else {
+        acc.outCome += cur.transaction
+      }
+      acc.total += cur.transaction
+      return acc
+    }, {
+      income: 0,
+      outCome: 0,
+      total: 0,
+      countPages: 0
+    })
+    data.income = data.income/100
+    data.outCome = data.outCome/100
+    data.total = data.total/100
+    const countPages = cache.countPages()
+    return {
+      ...data,
+      countPages
+    }
+  }, [transactions])
 
   emitter.on('fetch-transactions', fetchTransactions)
-  emitter.on('update-screen', updateScreenWithData)
+
   React.useEffect(() => {
     if (scrollRef && scrollRef.current) {
       scrollRef.current.addEventListener('wheel', e => {
@@ -80,7 +89,7 @@ export function Main () {
                 <ArrowCircleUp size={32} className='text-green-400' />
               </div>
               <span className='font-bold text-2xl text-gray-100'>
-                {amountEntry.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                {summary.income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </span>
             </div>
             <div className='rounded-md bg-gray-500 px-8 py-6 w-[352px] max-sm:w-[280px] flex flex-col gap-3 max-sm:flex-shrink-0'>
@@ -88,14 +97,14 @@ export function Main () {
                 <span className='text-gray-200'>Saídas</span>
                 <ArrowCircleDown size={32} className='text-red-400' />
               </div>
-              <span className='font-bold text-2xl text-gray-100'>{amountOut.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+              <span className='font-bold text-2xl text-gray-100'>{summary.outCome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
             </div>
             <div className='rounded-md bg-green-600 px-8 py-6 w-[352px] max-sm:w-[280px] flex flex-col gap-3 max-sm:flex-shrink-0'>
               <div className='w-full flex items-center justify-between'>
                 <span className='text-gray-200'>Total</span>
                 <CurrencyDollar size={32} className='text-white' />
               </div>
-              <span className='font-bold text-2xl text-gray-100'>{totalAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+              <span className='font-bold text-2xl text-gray-100'>{summary.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
             </div>
           </div>
         </header>
@@ -113,7 +122,7 @@ export function Main () {
           </div>
           <Pagination
             page={page}
-            pages={countPage}
+            pages={summary.countPages}
             setPage={setPage} />
         </main>
       </div>
