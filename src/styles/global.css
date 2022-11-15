@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .overflow-hidden-scroll {
+    overflow-x: hidden;
+  }
+}
