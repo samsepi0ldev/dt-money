@@ -9,10 +9,12 @@ import { SearchButton } from '../components/SearchButton'
 import { CreateTransaction } from '../components/CreateTransaction'
 import { Transaction, TransactionProps } from '../components/Transaction'
 import { useTransaction } from '../hooks/transaction'
-import repo from '../utils/cache'
+import repo from '../lib/cache'
 import { Pagination } from '../components/Pagination'
 import { TransactionEmpty } from '../components/TransactionEmpty'
 import { EventEmitter } from '../lib/EventEmitter'
+
+export const emitter = new EventEmitter()
 
 export function Main () {
   const scrollRef = React.useRef<HTMLDivElement>(null)
@@ -20,10 +22,30 @@ export function Main () {
   const [page, setPage] = React.useState(1)
 
   const cache = repo('expansive-transactions')
-  const emitter = new EventEmitter()
 
   function fetchTransactions () {
     setTransactions(cache.get(page))
+  }
+
+  function searchHandle (e: React.FormEvent) {
+    e.preventDefault()
+    const option = {
+      cat: 'category',
+      date: 'createdAt'
+    } as any
+    const form = e.target as HTMLFormElement
+    const data = Object.fromEntries(new FormData(form)) as any
+    const [opt, query] = data.search.split(':')
+    if (!query || !option[opt]) {
+      alert('Voce precisa digitar a opção de pesquisa Ex: cat: pix, ou date: 11')
+      return
+    }
+    const result = cache.find({
+      option: option[opt],
+      query: query.trim().toLowerCase()
+    })
+    setTransactions(result)
+    summary.countPages = result.length / 10
   }
 
   const summary = React.useMemo(() => {
@@ -66,7 +88,6 @@ export function Main () {
   }, [])
   React.useEffect(() => {
     emitter.emit('fetch-transactions')
-    emitter.emit('update-screen')
   }, [page])
   return (
     <div className='w-full h-screen'>
@@ -109,14 +130,14 @@ export function Main () {
           </div>
         </header>
         <main className='mt-32 px-40 max-sm:px-6 pb-10'>
-          <div className='flex gap-4 max-sm:gap-2'>
-            <Input type='text' placeholder='Busque uma transação' />
+          <form onSubmit={searchHandle} className='flex gap-4 max-sm:gap-2'>
+            <Input name='search' type='text' placeholder='Ex: cat: nome da categoria, ou date: dia ou mes' />
             <SearchButton />
-          </div>
+          </form>
           <div className='flex flex-col gap-2 max-sm:gap-3 mt-6'>
             {transactions.length
               ? transactions.map(transaction => (
-                <Transaction data={transaction} />
+                <Transaction key={transaction.id} data={transaction} />
               ))
             : <TransactionEmpty />}
           </div>

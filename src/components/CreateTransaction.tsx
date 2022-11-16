@@ -7,7 +7,7 @@ import { maskCurrencyInput } from '../utils/format-output-value-to-currency'
 import { Button } from './Button'
 import { Input } from './Input'
 import { SelectButton } from './SelectButton'
-import repo from '../utils/cache'
+import repo from '../lib/cache'
 import { EventEmitter } from '../lib/EventEmitter'
 
 interface Props {

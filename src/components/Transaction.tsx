@@ -1,6 +1,9 @@
-import { CalendarBlank, TagSimple } from "phosphor-react"
+import { CalendarBlank, TagSimple, Trash, TrashSimple } from "phosphor-react"
+import repo from "../lib/cache"
+import { emitter } from "../page/Main"
 
 export interface TransactionProps {
+  id: string
   description: string
   transaction: number
   category: string
@@ -13,6 +16,11 @@ interface Props {
 
 export function Transaction({ data }: Props) {
   const amount = data.transaction/100
+  function deleteTransaction (id: string) {
+    const cache = repo('expansive-transactions')
+    cache.del(id)
+    emitter.emit('fetch-transactions')
+  }
   return (
     <>
       <div className='hidden max-sm:flex bg-gray-600 rounded-md p-5 text-gray-200 flex-col justify-between'>
@@ -46,6 +54,9 @@ export function Transaction({ data }: Props) {
       <span>
         {new Date(data.createdAt).toLocaleDateString()}
       </span>
+      <button onClick={() => deleteTransaction(data.id)} className='hover:text-red-400 transition-colors'>
+        <Trash />
+      </button>
     </div>
     </>
     
